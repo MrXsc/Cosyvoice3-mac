@@ -1,4 +1,4 @@
-# TextEcho — 在 macOS (Apple Silicon) 上本地运行 CosyVoice3 语音克隆
+# Cosyvoice3-mac — 在 macOS (Apple Silicon) 上本地运行 CosyVoice3 语音克隆
 
 **v0.1（CPU 版）** · [English](#english) | 中文
 
@@ -29,8 +29,8 @@
 ## 一键部署
 
 ```bash
-git clone https://github.com/<you>/textecho.git
-cd textecho
+git clone https://github.com/MrXsc/Cosyvoice3-mac.git
+cd Cosyvoice3-mac
 bash install.sh
 ```
 
@@ -51,6 +51,29 @@ cd CosyVoice && git apply ../patches/0001-macos-mps-device.patch && cd ..
 python scripts/download_model.py
 ```
 </details>
+
+## 模型下载
+
+`install.sh` 会自动下载。手动下载有两种方式：
+
+```bash
+# 方式一：ModelScope 命令行（推荐，支持断点续传）
+pip install modelscope
+modelscope download --model FunAudioLLM/Fun-CosyVoice3-0.5B-2512 \
+    --local_dir CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B
+
+# 方式二：本仓库脚本（逐文件下载 + 远端大小校验，更抗中断）
+python scripts/download_model.py
+```
+
+模型放在任意路径都可以，合成时用 `--model-dir` 指定：
+
+```bash
+modelscope download --model FunAudioLLM/Fun-CosyVoice3-0.5B-2512 --local_dir /your/model/path
+
+TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py --model-dir /your/model/path \
+    --ref your_ref.m4a --prompt-text "参考音频里说的原话" --text "目标文字" --out result.wav
+```
 
 ## 快速开始
 
@@ -93,7 +116,7 @@ TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py \
 ## 目录结构
 
 ```
-textecho/
+Cosyvoice3-mac/
 ├── README.md
 ├── install.sh              # 幂等一键部署
 ├── environment.yml         # conda 环境定义（py3.10 + pynini + ffmpeg）
@@ -154,4 +177,4 @@ MIT（见 [LICENSE](LICENSE)）；上游 CosyVoice 为 Apache-2.0。
 <a name="english"></a>
 ## English
 
-TextEcho runs **Fun-CosyVoice3-0.5B** (zero-shot voice-cloning TTS) locally on **Apple Silicon Macs**. It adapts the deployment know-how of [cosyvoice2-mac](https://github.com/BreetyGreen/cosyvoice2-mac) to CosyVoice3 with: an MPS device patch (`patches/`), a minimal dependency set installable entirely from CN mirrors, an idempotent installer, reference-audio cleaning, and optional RL weights. See the 中文 sections above; docs are in `docs/`. Voice cloning only with your own voice or explicit consent — see the compliance notice.
+Cosyvoice3-mac runs **Fun-CosyVoice3-0.5B** (zero-shot voice-cloning TTS) locally on **Apple Silicon Macs**. It adapts the deployment know-how of [cosyvoice2-mac](https://github.com/BreetyGreen/cosyvoice2-mac) to CosyVoice3 with: an MPS device patch (`patches/`), a minimal dependency set installable entirely from CN mirrors, an idempotent installer, reference-audio cleaning, and optional RL weights. See the 中文 sections above. Voice cloning only with your own voice or explicit consent — see the compliance notice.

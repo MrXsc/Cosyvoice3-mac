@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# install.sh — TextEcho: macOS (Apple Silicon) 部署 Fun-CosyVoice3-0.5B
+# install.sh — Cosyvoice3-mac: macOS (Apple Silicon) 部署 Fun-CosyVoice3-0.5B
 #
 # 幂等：已完成的步骤自动跳过，可反复运行；网络中断后重跑即断点续传。
 # 与 cosyvoice2-mac 的差异：不依赖 brew（conda-forge 直接提供 ffmpeg），
@@ -15,7 +15,7 @@ CONDA_BIN="${CONDA_BIN:-$HOME/miniconda3/bin/conda}"
 COSYVOICE_DIR="$WORKDIR/CosyVoice"
 
 echo "=========================================="
-echo " TextEcho: Fun-CosyVoice3 macOS 部署"
+echo " Cosyvoice3-mac: Fun-CosyVoice3 macOS 部署"
 echo " 工作目录: $WORKDIR"
 echo "=========================================="
 

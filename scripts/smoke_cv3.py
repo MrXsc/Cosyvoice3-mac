@@ -5,7 +5,7 @@
 --ref 指定自己的音频时切换到 zero-shot 模式（需要 --prompt-text，
 不给则用 whisper 自动识别）。
 
-用法（在 TextEcho 根目录）：
+用法（在仓库根目录）：
   TEXT_ECHO_DEVICE=cpu python scripts/smoke_cv3.py
   TEXT_ECHO_DEVICE=cpu python scripts/smoke_cv3.py --ref my_ref.m4a --prompt-text "录音里说的话"
 """
