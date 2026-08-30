@@ -1,10 +1,10 @@
-# Cosyvoice3-mac — 在 macOS (Apple Silicon) 上本地运行 CosyVoice3 语音克隆
+# Cosyvoice3-mac
 
 **v0.1（CPU 版）** · [English](#english) | 中文
 
-在 **Apple Silicon Mac（M1/M2/M3/M4）** 上零基础部署 **Fun-CosyVoice3-0.5B**（阿里 FunAudioLLM 开源零样本 TTS），用一段 5~10 秒参考音频克隆音色，纯本地推理，免费、离线、数据不出机器。
+在 Apple Silicon Mac 上本地运行 **Fun-CosyVoice3-0.5B** 语音克隆（阿里 FunAudioLLM 开源 TTS）：一段 5~10 秒参考音频即可克隆音色，纯本地推理，免费、离线。
 
-> 适配经验源自 [cosyvoice2-mac](https://github.com/BreetyGreen/cosyvoice2-mac)（MIT），在其"环境绕坑"方案基础上，完成了 CosyVoice3 的 **MPS 补丁**与**最小化依赖**改造，并实测跑通 zero-shot / cross-lingual / RL 权重全链路。
+基于官方 CosyVoice3 做 macOS 适配：MPS 补丁、最小化依赖、一键安装脚本，实测跑通 zero-shot / cross-lingual / RL 权重。环境踩坑方案参考 [cosyvoice2-mac](https://github.com/BreetyGreen/cosyvoice2-mac)（MIT）。
 
 ## 特性
 
@@ -139,24 +139,6 @@ Cosyvoice3-mac/
 - `cosyvoice/hifigan/generator.py`：MPS 不支持 float64，f0 预测回 CPU（官方注释建议的做法）
 
 上游代码不入库，升级后重新 `git apply` 即可。
-
-## 踩坑记录
-
-按官方流程在 Mac 上部署必踩的坑，`install.sh` 已全部自动处理：
-
-| # | 现象 | 根因 | 解法 |
-|---|---|---|---|
-| 1 | `pynini` pip 安装编译失败 | 需编译 C++ 的 OpenFst | conda-forge 安装预编译包 |
-| 2 | `requirements.txt` 报错/拖慢 | 首行 CUDA pip 源（cu121） | 用本仓库的 `requirements.mac.txt` |
-| 3 | `openai-whisper` 报 `No module named 'pkg_resources'` | setuptools≥81 移除了它 | 装 `setuptools<81` |
-| 4 | `pyworld` 编译报缺 numpy | 构建隔离环境不带 numpy | 先装 `numpy==1.26.4` 再 `--no-build-isolation` |
-| 5 | Matcha-TTS 子模块为空 → yaml 加载报 `No module named 'matcha'` | clone 时没拉子模块 | `git clone --recursive` |
-| 6 | 推理报缺 `llm.pt` / `speech_tokenizer_v3.onnx` | 大文件下载被中断 | 重跑 `scripts/download_model.py`（逐文件断点续传 + 远端大小校验） |
-| 7 | `snapshot_download` 中断后目录被清空/损坏 | local_dir 同步模式在异常中断后不可靠 | 同上：逐文件 API 下载 |
-| 8 | CosyVoice3 报 `<|endofprompt|> not detected` | v3 要求文本显式携带该特殊 token | 脚本已自动补 `You are a helpful assistant.<|endofprompt|>` 前缀 |
-| 9 | `ModuleNotFoundError`（diffusers/lightning/librosa 等） | 被 yaml/子模块间接 import，静态分析扫不到 | 本仓库 `requirements.mac.txt` 已含全部实测依赖 |
-
-依赖最小化思路：只装推理必需包（训练/webui 的依赖不装），每行注明用途；conda 层负责难编译的 pynini 和 ffmpeg，pip 层钉死实测版本组合。
 
 ## ⚠️ 合规提醒
 
