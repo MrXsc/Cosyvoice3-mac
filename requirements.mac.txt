@@ -1,0 +1,44 @@
+# TextEcho — macOS (Apple Silicon) 最小依赖清单
+# 原则：最小化、分层、有理由。每行注明它服务于哪个 import/功能。
+# L1(whisper)/L2(webui) 未列出的包在需要时再按理由补装（见 PLAN.md 阶段1）。
+# 版本锚点：cosyvoice2-mac 实测可用组合（torch 2.3.1 / numpy 1.26.4 / setuptools<81）
+
+# ---- L0 核心推理层 ----
+# torch MPS 加速 + 音频读写（cosyvoice/cli/*, torchaudio.save）
+torch==2.3.1
+torchaudio==2.3.1
+# 跑 campplus.onnx / speech_tokenizer_v3.onnx（cosyvoice/cli/frontend.py，CPU provider）
+onnxruntime==1.18.0
+# 加载 cosyvoice3.yaml 配置（cosyvoice/cli/cosyvoice.py: load_hyperpyyaml）
+HyperPyYAML==1.2.3
+# HyperPyYAML 依赖
+omegaconf==2.3.0
+# ModelScope 下载模型权重（cosyvoice/cli/cosyvoice.py: snapshot_download）
+modelscope==1.20.0
+# Qwen tokenizer（cosyvoice/tokenizer/tokenizer.py、llm/llm.py）
+transformers==4.51.3
+tiktoken
+# CosyVoice3 DiT flow（cosyvoice/flow/DiT/dit.py、modules.py）
+x-transformers==2.11.24
+# conformer 被 yaml 配置间接 import（llm 结构）
+conformer==0.3.2
+# 文本正则化前端（cosyvoice/cli/frontend.py，替代装不上的 ttsfrd）
+wetext
+inflect==7.3.1
+# 保存 wav / 读音频
+soundfile==0.12.1
+# hifigan/generator.py 顶层 import scipy.signal（实测报错后补装）
+scipy
+# frontend.py 顶层无条件 import whisper（原以为仅 zero-shot 需要，实测 L0 必需）
+# 注意 --no-build-isolation 配合预装的 setuptools<81/numpy（坑 #3）
+openai-whisper==20231117
+# 以下 7 个为 yaml 间接 import / matcha 子模块依赖，静态扫描扫不到，
+# 全部由"报错即装"循环实测补齐：
+diffusers==0.29.0            # cosyvoice/flow/flow_matching.py
+hydra-core==1.3.2            # matcha/hifigan 等模块
+lightning==2.2.4             # flow_matching.py 继承 LightningModule（推翻了"推理不需要"的预判）
+rich==13.7.1                 # lightning 依赖链
+gdown                        # matcha components
+librosa==0.10.2              # matcha components / 音频处理
+matplotlib==3.7.5            # matcha components
+

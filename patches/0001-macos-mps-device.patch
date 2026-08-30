@@ -1,0 +1,193 @@
+diff --git a/cosyvoice/cli/model.py b/cosyvoice/cli/model.py
+index 92a15d9..86ecff8 100644
+--- a/cosyvoice/cli/model.py
++++ b/cosyvoice/cli/model.py
+@@ -26,6 +26,35 @@ from cosyvoice.utils.file_utils import convert_onnx_to_trt, export_cosyvoice2_vl
+ from cosyvoice.utils.common import TrtContextWrapper
+ 
+ 
++def get_device():
++    # TextEcho macOS 适配：cuda 优先，其次 Apple Silicon MPS，最后 cpu。
++    # 支持用环境变量 TEXT_ECHO_DEVICE=mps|cpu 强制指定（对比测试用）。
++    forced = os.environ.get('TEXT_ECHO_DEVICE')
++    if forced:
++        return torch.device(forced)
++    if torch.cuda.is_available():
++        return torch.device('cuda')
++    if torch.backends.mps.is_available():
++        return torch.device('mps')
++    return torch.device('cpu')
++
++
++def _autocast_ctx(device, enabled):
++    # 官方写法 torch.cuda.amp.autocast 只认 cuda；MPS 上 fp16 需 device_type 指定，
++    # 且默认不启用（fp16=False 时走 fp32，数值更稳）。
++    if enabled and device.type in ('cuda', 'mps'):
++        return torch.autocast(device_type=device.type, dtype=torch.float16)
++    return nullcontext()
++
++
++def _empty_cache(device):
++    if device.type == 'cuda':
++        torch.cuda.empty_cache()
++        torch.cuda.current_stream().synchronize()
++    elif device.type == 'mps':
++        torch.mps.empty_cache()
++
++
+ class CosyVoiceModel:
+ 
+     def __init__(self,
+@@ -33,7 +62,7 @@ class CosyVoiceModel:
+                  flow: torch.nn.Module,
+                  hift: torch.nn.Module,
+                  fp16: bool = False):
+-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
++        self.device = get_device()
+         self.llm = llm
+         self.flow = flow
+         self.hift = hift
+@@ -52,7 +81,7 @@ class CosyVoiceModel:
+         # rtf and decoding related
+         self.stream_scale_factor = 1
+         assert self.stream_scale_factor >= 1, 'stream_scale_factor should be greater than 1, change it according to your actual rtf'
+-        self.llm_context = torch.cuda.stream(torch.cuda.Stream(self.device)) if torch.cuda.is_available() else nullcontext()
++        self.llm_context = torch.cuda.stream(torch.cuda.Stream(self.device)) if self.device.type == 'cuda' else nullcontext()
+         self.lock = threading.Lock()
+         # dict used to store session related variable
+         self.tts_speech_token_dict = {}
+@@ -100,7 +129,7 @@ class CosyVoiceModel:
+ 
+     def llm_job(self, text, prompt_text, llm_prompt_speech_token, llm_embedding, uuid):
+         cur_silent_token_num, max_silent_token_num = 0, 5
+-        with self.llm_context, torch.cuda.amp.autocast(self.fp16 is True and hasattr(self.llm, 'vllm') is False):
++        with self.llm_context, _autocast_ctx(self.device, self.fp16 is True and hasattr(self.llm, 'vllm') is False):
+             if isinstance(text, Generator):
+                 assert (self.__class__.__name__ != 'CosyVoiceModel') and not hasattr(self.llm, 'vllm'), 'streaming input text is only implemented for CosyVoice2/3 and do not support vllm!'
+                 token_generator = self.llm.inference_bistream(text=text,
+@@ -133,7 +162,7 @@ class CosyVoiceModel:
+         self.llm_end_dict[uuid] = True
+ 
+     def token2wav(self, token, prompt_token, prompt_feat, embedding, uuid, finalize=False, speed=1.0):
+-        with torch.cuda.amp.autocast(self.fp16):
++        with _autocast_ctx(self.device, self.fp16):
+             tts_mel, self.flow_cache_dict[uuid] = self.flow.inference(token=token.to(self.device, dtype=torch.int32),
+                                                                       token_len=torch.tensor([token.shape[1]], dtype=torch.int32).to(self.device),
+                                                                       prompt_token=prompt_token.to(self.device),
+@@ -237,9 +266,7 @@ class CosyVoiceModel:
+             self.mel_overlap_dict.pop(this_uuid)
+             self.hift_cache_dict.pop(this_uuid)
+             self.flow_cache_dict.pop(this_uuid)
+-        if torch.cuda.is_available():
+-            torch.cuda.empty_cache()
+-            torch.cuda.current_stream().synchronize()
++        _empty_cache(self.device)
+ 
+ 
+ class CosyVoice2Model(CosyVoiceModel):
+@@ -249,7 +276,7 @@ class CosyVoice2Model(CosyVoiceModel):
+                  flow: torch.nn.Module,
+                  hift: torch.nn.Module,
+                  fp16: bool = False):
+-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
++        self.device = get_device()
+         self.llm = llm
+         self.flow = flow
+         self.hift = hift
+@@ -266,7 +293,7 @@ class CosyVoice2Model(CosyVoiceModel):
+         # speech fade in out
+         self.speech_window = np.hamming(2 * self.source_cache_len)
+         # rtf and decoding related
+-        self.llm_context = torch.cuda.stream(torch.cuda.Stream(self.device)) if torch.cuda.is_available() else nullcontext()
++        self.llm_context = torch.cuda.stream(torch.cuda.Stream(self.device)) if self.device.type == 'cuda' else nullcontext()
+         self.lock = threading.Lock()
+         # dict used to store session related variable
+         self.tts_speech_token_dict = {}
+@@ -290,7 +317,7 @@ class CosyVoice2Model(CosyVoiceModel):
+         del self.llm.llm.model.model.layers
+ 
+     def token2wav(self, token, prompt_token, prompt_feat, embedding, token_offset, uuid, stream=False, finalize=False, speed=1.0):
+-        with torch.cuda.amp.autocast(self.fp16):
++        with _autocast_ctx(self.device, self.fp16):
+             tts_mel, _ = self.flow.inference(token=token.to(self.device, dtype=torch.int32),
+                                              token_len=torch.tensor([token.shape[1]], dtype=torch.int32).to(self.device),
+                                              prompt_token=prompt_token.to(self.device),
+@@ -389,9 +416,7 @@ class CosyVoice2Model(CosyVoiceModel):
+             self.tts_speech_token_dict.pop(this_uuid)
+             self.llm_end_dict.pop(this_uuid)
+             self.hift_cache_dict.pop(this_uuid)
+-        if torch.cuda.is_available():
+-            torch.cuda.empty_cache()
+-            torch.cuda.current_stream().synchronize()
++        _empty_cache(self.device)
+ 
+ 
+ class CosyVoice3Model(CosyVoice2Model):
+@@ -401,7 +426,7 @@ class CosyVoice3Model(CosyVoice2Model):
+                  flow: torch.nn.Module,
+                  hift: torch.nn.Module,
+                  fp16: bool = False):
+-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
++        self.device = get_device()
+         self.llm = llm
+         self.flow = flow
+         self.hift = hift
+@@ -413,7 +438,7 @@ class CosyVoice3Model(CosyVoice2Model):
+         self.stream_scale_factor = 2
+         assert self.stream_scale_factor >= 1, 'stream_scale_factor should be greater than 1, change it according to your actual rtf'
+         # rtf and decoding related
+-        self.llm_context = torch.cuda.stream(torch.cuda.Stream(self.device)) if torch.cuda.is_available() else nullcontext()
++        self.llm_context = torch.cuda.stream(torch.cuda.Stream(self.device)) if self.device.type == 'cuda' else nullcontext()
+         self.lock = threading.Lock()
+         # dict used to store session related variable
+         self.tts_speech_token_dict = {}
+@@ -423,7 +448,7 @@ class CosyVoice3Model(CosyVoice2Model):
+         self.silent_tokens = [1, 2, 28, 29, 55, 248, 494, 2241, 2242, 2322, 2323]
+ 
+     def token2wav(self, token, prompt_token, prompt_feat, embedding, token_offset, uuid, stream=False, finalize=False, speed=1.0):
+-        with torch.cuda.amp.autocast(self.fp16):
++        with _autocast_ctx(self.device, self.fp16):
+             tts_mel, _ = self.flow.inference(token=token.to(self.device, dtype=torch.int32),
+                                              token_len=torch.tensor([token.shape[1]], dtype=torch.int32).to(self.device),
+                                              prompt_token=prompt_token.to(self.device),
+diff --git a/cosyvoice/hifigan/generator.py b/cosyvoice/hifigan/generator.py
+index bbc2a21..14d714f 100644
+--- a/cosyvoice/hifigan/generator.py
++++ b/cosyvoice/hifigan/generator.py
+@@ -713,8 +713,13 @@ class CausalHiFTGenerator(HiFTGenerator):
+     @torch.inference_mode()
+     def inference(self, speech_feat: torch.Tensor, finalize: bool = True) -> torch.Tensor:
+         # mel->f0 NOTE f0_predictor precision is crucial for causal inference, move self.f0_predictor to cpu if necessary
+-        self.f0_predictor.to(torch.float64)
+-        f0 = self.f0_predictor(speech_feat.to(torch.float64), finalize=finalize).to(speech_feat)
++        if speech_feat.device.type == 'mps':
++            # TextEcho macOS 适配：MPS 不支持 float64，f0 预测回 CPU（官方注释建议的做法）
++            self.f0_predictor.to(device='cpu', dtype=torch.float64)
++            f0 = self.f0_predictor(speech_feat.to(device='cpu', dtype=torch.float64), finalize=finalize).to(speech_feat)
++        else:
++            self.f0_predictor.to(torch.float64)
++            f0 = self.f0_predictor(speech_feat.to(torch.float64), finalize=finalize).to(speech_feat)
+         # f0->source
+         s = self.f0_upsamp(f0[:, None]).transpose(1, 2)  # bs,n,t
+         s, _, _ = self.m_source(s)
+diff --git a/cosyvoice/hifigan/generator.py b/cosyvoice/hifigan/generator.py
+index bbc2a21..988623a 100644
+--- a/cosyvoice/hifigan/generator.py
++++ b/cosyvoice/hifigan/generator.py
+@@ -713,8 +713,14 @@ class CausalHiFTGenerator(HiFTGenerator):
+     @torch.inference_mode()
+     def inference(self, speech_feat: torch.Tensor, finalize: bool = True) -> torch.Tensor:
+         # mel->f0 NOTE f0_predictor precision is crucial for causal inference, move self.f0_predictor to cpu if necessary
+-        self.f0_predictor.to(torch.float64)
+-        f0 = self.f0_predictor(speech_feat.to(torch.float64), finalize=finalize).to(speech_feat)
++        if speech_feat.device.type == 'mps':
++            # TextEcho macOS 适配：MPS 不支持 float64，f0 预测回 CPU（官方注释建议的做法）。
++            # 注意必须两步：先回 CPU 再转 float64，一步合并转换会触发 MPS float64 限制
++            self.f0_predictor.to(device='cpu').to(dtype=torch.float64)
++            f0 = self.f0_predictor(speech_feat.to('cpu').to(torch.float64), finalize=finalize).to(speech_feat)
++        else:
++            self.f0_predictor.to(torch.float64)
++            f0 = self.f0_predictor(speech_feat.to(torch.float64), finalize=finalize).to(speech_feat)
+         # f0->source
+         s = self.f0_upsamp(f0[:, None]).transpose(1, 2)  # bs,n,t
+         s, _, _ = self.m_source(s)

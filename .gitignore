@@ -1,0 +1,25 @@
+# 大文件与产物不入库
+*.pt
+*.onnx
+*.safetensors
+*.wav
+*.mp3
+*.plan
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+pretrained_models/
+CosyVoice/pretrained_models/
+env.lock.yml
+output*.wav
+_ref_16k.wav
+# 外部源码树（各自是独立 git 仓库，不入本仓库）
+CosyVoice/
+cosyvoice2-mac/
+
+# 个人素材与本地草稿，绝不入库
+*.m4a
+*.aac
+.DS_Store
+.zcode/
+lab.md
