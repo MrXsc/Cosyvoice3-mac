@@ -20,6 +20,9 @@ cosyvoice2-mac/
 # 个人素材与本地草稿，绝不入库
 *.m4a
 *.aac
+*.mov
+*.mp4
+*.MP4
 .DS_Store
 .zcode/
 lab.md

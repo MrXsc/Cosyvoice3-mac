@@ -89,6 +89,13 @@ TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py \
     --text "要合成的目标文字" \
     --no-prompt-text \
     --out result.wav
+
+# 指令模式：方言 / 情绪 / 语速，套参考音频音色
+TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py \
+    --ref your_ref.m4a \
+    --text "要合成的目标文字" \
+    --instruct "请用四川话表达，语气活泼" \
+    --out result.wav
 ```
 
 <details>
@@ -102,6 +109,8 @@ TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py \
 | `--clip-seconds N` | 参考音频取前 N 秒（5~10 最佳；0=不截取） |
 | `--no-denoise` | 清洗时不降噪（人声干净时用，避免发闷） |
 | `--no-clean` | 完全关闭参考音频清洗 |
+| `--instruct "指令"` | 指令模式：在参考音频音色基础上施加方言/情绪/语速指令（如"请用四川话表达""请非常开心地说一句话"），自动规范化到官方 instruct 格式，走 `inference_instruct2`，免参考文字 |
+| `--speed N` | 语速倍率（0.5~2.0，默认 1.0） |
 | `--out` | 输出 wav 路径 |
 
 </details>

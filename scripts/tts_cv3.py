@@ -80,6 +80,11 @@ def main():
     ap.add_argument("--text", required=True, help="目标文字")
     ap.add_argument("--prompt-text", default=None, help="参考音频对应文字（zero-shot）")
     ap.add_argument("--no-prompt-text", action="store_true", help="cross-lingual 模式，免参考文字")
+    ap.add_argument("--instruct", default=None,
+                    help="指令模式：基于参考音频音色，施加情绪/语速/语气/方言指令"
+                         "（如 \"请用四川话表达\" \"悲伤地\" \"语速放慢\"）。"
+                         "传入后走 inference_instruct2，无需 prompt-text")
+    ap.add_argument("--speed", type=float, default=1.0, help="语速倍率（0.5~2.0，默认 1.0）")
     ap.add_argument("--no-clean", action="store_true", help="关闭参考音频清洗")
     ap.add_argument("--no-denoise", action="store_true", help="清洗时不降噪")
     ap.add_argument("--clip-seconds", type=float, default=0.0, help="取清洗后前 N 秒（5~10 最佳）")
@@ -107,17 +112,19 @@ def main():
         preprocess_audio(ref, prompt_wav, args.clip_seconds, not args.no_denoise)
 
     prompt_text = None
-    if not args.no_prompt_text:
+    if not args.no_prompt_text and not args.instruct:
         prompt_text = args.prompt_text or transcribe(prompt_wav)
 
     # CosyVoice3 要求文本携带 <|endofprompt|> 特殊 token（llm.py 硬校验）：
-    # zero-shot 放参考文字前，cross-lingual 放合成文本前（参照官方 example.py）
-    PREFIX = "You are a helpful assistant.<|endofprompt|>"
-    if "<|endofprompt|>" not in (prompt_text or args.text):
-        if args.no_prompt_text:
-            args.text = PREFIX + args.text
-        else:
-            prompt_text = PREFIX + prompt_text
+    # zero-shot 放参考文字前，cross-lingual 放合成文本前（参照官方 example.py）。
+    # instruct 模式下 frontend_instruct2 自行处理，无需加前缀。
+    if not args.instruct:
+        PREFIX = "You are a helpful assistant.<|endofprompt|>"
+        if "<|endofprompt|>" not in (prompt_text or args.text):
+            if args.no_prompt_text:
+                args.text = PREFIX + args.text
+            else:
+                prompt_text = PREFIX + prompt_text
 
     import torch
     import torchaudio
@@ -128,9 +135,19 @@ def main():
     # fp16=False：MPS 上 fp16 数值不稳，先 fp32 跑通（WIKI §4.3）
     model = AutoModel(model_dir=args.model_dir, fp16=False)
     print(f">>> 模型加载 {time.time()-t0:.1f}s")
-    gen = model.inference_cross_lingual(args.text, prompt_wav, stream=False) \
-        if args.no_prompt_text else \
-        model.inference_zero_shot(args.text, prompt_text, prompt_wav, stream=False)
+    kw = dict(stream=False, speed=args.speed)
+    if args.instruct:
+        # frontend_instruct2 把 instruct_text 当 zero-shot 的 prompt 用，
+        # 需规范化到官方 instruct_list 格式（common.py）：前缀 + 指令 + endofprompt token。
+        instr = args.instruct
+        if not instr.startswith("You are a helpful assistant"):
+            instr = f"You are a helpful assistant. {instr}。<|endofprompt|>"
+        print(f">>> 指令模式，指令：{instr}")
+        gen = model.inference_instruct2(args.text, instr, prompt_wav, **kw)
+    else:
+        gen = model.inference_cross_lingual(args.text, prompt_wav, **kw) \
+            if args.no_prompt_text else \
+            model.inference_zero_shot(args.text, prompt_text, prompt_wav, **kw)
 
     out_abs = os.path.abspath(os.path.expanduser(args.out))
     for i, chunk in enumerate(gen):
