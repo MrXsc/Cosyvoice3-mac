@@ -129,12 +129,12 @@ TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py \
 <div align="center">
 
 **参考音频**
-<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/1_feng_zero_shot/ref.wav" controls preload="none"></audio>
+<audio src="https://cdn.jsdelivr.net/gh/MrXsc/Cosyvoice3-mac@main/resource/1_feng_zero_shot/ref.wav" controls preload="none"></audio>
 
 ↓ 克隆音色
 
 **生成结果**
-<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/1_feng_zero_shot/out.wav" controls preload="none"></audio>
+<audio src="https://cdn.jsdelivr.net/gh/MrXsc/Cosyvoice3-mac@main/resource/1_feng_zero_shot/out.wav" controls preload="none"></audio>
 
 </div>
 
@@ -148,12 +148,12 @@ TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py \
 <div align="center">
 
 **参考音频**
-<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/2_tim_sichuan_instruct/ref.wav" controls preload="none"></audio>
+<audio src="https://cdn.jsdelivr.net/gh/MrXsc/Cosyvoice3-mac@main/resource/2_tim_sichuan_instruct/ref.wav" controls preload="none"></audio>
 
 ↓ 四川话指令
 
 **生成结果**
-<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/2_tim_sichuan_instruct/out.wav" controls preload="none"></audio>
+<audio src="https://cdn.jsdelivr.net/gh/MrXsc/Cosyvoice3-mac@main/resource/2_tim_sichuan_instruct/out.wav" controls preload="none"></audio>
 
 </div>
 
@@ -167,12 +167,12 @@ TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py \
 <div align="center">
 
 **参考音频**
-<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/3_cross_lingual/ref.wav" controls preload="none"></audio>
+<audio src="https://cdn.jsdelivr.net/gh/MrXsc/Cosyvoice3-mac@main/resource/3_cross_lingual/ref.wav" controls preload="none"></audio>
 
 ↓ 免参考文字
 
 **生成结果**
-<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/3_cross_lingual/out.wav" controls preload="none"></audio>
+<audio src="https://cdn.jsdelivr.net/gh/MrXsc/Cosyvoice3-mac@main/resource/3_cross_lingual/out.wav" controls preload="none"></audio>
 
 </div>
 
