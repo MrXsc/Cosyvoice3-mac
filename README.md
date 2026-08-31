@@ -115,6 +115,69 @@ TEXT_ECHO_DEVICE=cpu python scripts/tts_cv3.py \
 
 </details>
 
+## 🔊 效果展示
+
+三种模式实测对比，点击播放直接试听。
+
+> 🎧 建议戴耳机听。所有样本均使用 CPU 推理（M4 / 24GB），每组仅需几秒参考音频。参考音频来自公开网络素材，仅供技术演示，侵删。
+
+<details open>
+<summary><b>① 零样本克隆（zero-shot）— 参考 8 秒，生成 20 秒</b></summary>
+
+套用参考音频音色，说目标文字。音色相似度 ~70% 由参考音频质量决定。
+
+<div align="center">
+
+**参考音频**
+<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/1_feng_zero_shot/ref.wav" controls preload="none"></audio>
+
+↓ 克隆音色
+
+**生成结果**
+<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/1_feng_zero_shot/out.wav" controls preload="none"></audio>
+
+</div>
+
+</details>
+
+<details open>
+<summary><b>② 指令模式（instruct）— 参考 5 秒，四川话生成 7.8 秒</b></summary>
+
+在参考音频音色基础上，施加方言/情绪/语速指令，免参考文字。
+
+<div align="center">
+
+**参考音频**
+<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/2_tim_sichuan_instruct/ref.wav" controls preload="none"></audio>
+
+↓ 四川话指令
+
+**生成结果**
+<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/2_tim_sichuan_instruct/out.wav" controls preload="none"></audio>
+
+</div>
+
+</details>
+
+<details open>
+<summary><b>③ 跨语言模式（cross-lingual）— 参考 4.4 秒，生成 9.4 秒</b></summary>
+
+免参考文字，不吃听写错误，适合脏录音或不确定原文内容时使用。
+
+<div align="center">
+
+**参考音频**
+<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/3_cross_lingual/ref.wav" controls preload="none"></audio>
+
+↓ 免参考文字
+
+**生成结果**
+<audio src="https://raw.githubusercontent.com/MrXsc/Cosyvoice3-mac/main/resource/3_cross_lingual/out.wav" controls preload="none"></audio>
+
+</div>
+
+</details>
+
 ## 💡 效果经验
 
 1. **克隆相似度 ~70% 由参考音频质量决定**：单人、无背景音乐、吐字清楚、纯一种语言、5~10 秒、情绪平稳
