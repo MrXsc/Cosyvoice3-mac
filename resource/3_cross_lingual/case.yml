@@ -1,0 +1,14 @@
+# cross-lingual 免参考文字模式
+# 用法: scripts/tts_cv3.py --no-prompt-text 生成
+
+mode: cross-lingual
+ref: ref.wav
+out: out.wav
+
+text: "最近在mac上本地跑AI语音克隆，不用联网不花钱，电脑自己就能学你说话，这个技术真的绝了"
+
+params:
+  device: cpu
+
+out_duration_s: 9.36
+rtf: 4.96

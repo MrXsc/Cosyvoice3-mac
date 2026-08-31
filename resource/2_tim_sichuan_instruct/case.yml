@@ -1,0 +1,16 @@
+# tim 四川话指令克隆
+# 用法: scripts/tts_cv3.py --instruct "请用四川话表达" 生成
+
+mode: instruct
+ref: ref.wav
+out: out.wav
+instruct: "请用四川话表达"
+
+text: "硬是谢谢你咯! 硬是安逸惨了，今天! 几点了？也，太阳出来了,喊你老汉儿回来吃饭了"
+
+params:
+  clip_seconds: 5
+  device: cpu
+
+out_duration_s: 7.8
+rtf: 6.97

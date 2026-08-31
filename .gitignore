@@ -4,6 +4,8 @@
 *.safetensors
 *.wav
 *.mp3
+# resource/ 下的 wav 是展示用例，需入库
+!resource/**/*.wav
 *.plan
 __pycache__/
 *.pyc

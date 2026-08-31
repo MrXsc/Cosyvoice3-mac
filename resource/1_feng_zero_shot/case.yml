@@ -1,0 +1,17 @@
+# 峰哥 zero-shot 音色克隆
+# 用法: scripts/tts_cv3.py 生成
+
+mode: zero-shot
+ref: ref.wav
+out: out.wav
+
+prompt_text: "额，你不想包养个女明星吗？妈呀，我可包养不起，你可别开玩笑了，咱之前不说了吗？有钱人不一定比你生活得幸福，就像我经常吃那个酸菜牛肉盖饭，营养价值已经足足的了，才45"
+
+text: "大家好，我是二次元峰哥！祝我的好家人哈哈哥，身体健康万事如意，发东南西北旋风财，早日成为社会精英，住上大平层，长生不老永远不死，爱你呦！"
+
+params:
+  clip_seconds: 8
+  device: cpu
+
+out_duration_s: 20.48
+rtf: 6.8
